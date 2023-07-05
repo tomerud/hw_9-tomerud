@@ -1,79 +1,107 @@
 package il.ac.tau.cs.sw1.ex9.starfleet;
 
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class StarfleetManager {
 
-	/**
-	 * Returns a list containing string representation of all fleet ships, sorted in descending order by
-	 * fire power, and then in descending order by commission year, and finally in ascending order by
-	 * name
-	 */
-	public static List<String> getShipDescriptionsSortedByFirePowerAndCommissionYear (Collection<Spaceship> fleet) {
-		return null;
+	public static List<String> getShipDescriptionsSortedByFirePowerAndCommissionYear(Collection<Spaceship> fleet) {
+		return fleet.stream()
+				.sorted(Comparator.comparingInt(Spaceship::getFirePower)
+						.reversed()
+						.thenComparingInt(Spaceship::getCommissionYear)
+						.reversed()
+						.thenComparing(Spaceship::getName))
+				.map(Spaceship::toString)
+				.collect(Collectors.toList());
 	}
 
-	/**
-	 * Returns a map containing ship type names as keys (the class name) and the number of instances created for each type as values
-	 */
 	public static Map<String, Integer> getInstanceNumberPerClass(Collection<Spaceship> fleet) {
-		return null;
-
+		Map<String, Integer> instanceMap = new HashMap<>();
+		for (Spaceship ship : fleet) {
+			String className = ship.getClass().getSimpleName();
+			instanceMap.put(className, instanceMap.getOrDefault(className, 0) + 1);
+		}
+		return instanceMap;
 	}
 
-
-	/**
-	 * Returns the total annual maintenance cost of the fleet (which is the sum of maintenance costs of all the fleet's ships)
-	 */
-	public static int getTotalMaintenanceCost (Collection<Spaceship> fleet) {
-		return 0;
-
+	public static int getTotalMaintenanceCost(Collection<Spaceship> fleet) {
+		return fleet.stream()
+				.mapToInt(Spaceship::getAnnualMaintenanceCost)
+				.sum();
 	}
 
-
-	/**
-	 * Returns a set containing the names of all the fleet's weapons installed on any ship
-	 */
 	public static Set<String> getFleetWeaponNames(Collection<Spaceship> fleet) {
-		return null;
+		Set<String> weaponNames = new HashSet<>();
 
+		for (Spaceship ship : fleet) {
+			if (ship instanceof Fighter) {
+				List<Weapon> fighterWeapons = ((Fighter) ship).getWeapon();
+				addWeaponNames(weaponNames, fighterWeapons);
+			} else if (ship instanceof Bomber) {
+				List<Weapon> bomberWeapons = ((Bomber) ship).getWeapon();
+				addWeaponNames(weaponNames, bomberWeapons);
+			}
+		}
+
+		return weaponNames;
 	}
 
-	/*
-	 * Returns the total number of crew-members serving on board of the given fleet's ships.
-	 */
+	private static void addWeaponNames(Set<String> weaponNames, List<Weapon> weapons) {
+		for (Weapon weapon : weapons) {
+			weaponNames.add(weapon.getName());
+		}
+	}
+
 	public static int getTotalNumberOfFleetCrewMembers(Collection<Spaceship> fleet) {
-		return 0;
-
+		return fleet.stream()
+				.mapToInt(ship -> ship.getCrewMembers().size())
+				.sum();
 	}
 
-	/*
-	 * Returns the average age of all officers serving on board of the given fleet's ships. 
-	 */
 	public static float getAverageAgeOfFleetOfficers(Collection<Spaceship> fleet) {
-		return 0f;
+		int totalOfficers = 0;
+		int sumOfOfficersAge = 0;
+
+		for (Spaceship ship : fleet) {
+			for (CrewMember crewMember : ship.getCrewMembers()) {
+				if (crewMember instanceof Officer) {
+					totalOfficers++;
+					sumOfOfficersAge += crewMember.getAge();
+				}
+			}
+		}
+
+		return (float) sumOfOfficersAge / totalOfficers;
 	}
 
-	/*
-	 * Returns a map mapping the highest ranking officer on each ship (as keys), to his ship (as values).
-	 */
 	public static Map<Officer, Spaceship> getHighestRankingOfficerPerShip(Collection<Spaceship> fleet) {
-		return null;
-
+		Map<Officer, Spaceship> highestRankingOfficers = new HashMap<>();
+		for (Spaceship ship : fleet) {
+			Officer highestRankingOfficer = ship.getCrewMembers().stream()
+					.filter(member -> member instanceof Officer)
+					.map(member -> (Officer) member)
+					.max(Comparator.comparing(Officer::getRank))
+					.orElse(null);
+			if (highestRankingOfficer != null) {
+				highestRankingOfficers.put(highestRankingOfficer, ship);
+			}
+		}
+		return highestRankingOfficers;
 	}
 
-	/*
-	 * Returns a List of entries representing ranks and their occurrences.
-	 * Each entry represents a pair composed of an officer rank, and the number of its occurrences among starfleet personnel.
-	 * The returned list is sorted ascendingly based on the number of occurrences.
-	 */
 	public static List<Map.Entry<OfficerRank, Integer>> getOfficerRanksSortedByPopularity(Collection<Spaceship> fleet) {
-		return null;
+		Map<OfficerRank, Integer> rankPopularity = new HashMap<>();
+		for (Spaceship ship : fleet) {
+			for (CrewMember crewMember : ship.getCrewMembers()) {
+				if (crewMember instanceof Officer) {
+					OfficerRank rank = ((Officer) crewMember).getRank();
+					rankPopularity.put(rank, rankPopularity.getOrDefault(rank, 0) + 1);
+				}
+			}
+		}
+		List<Map.Entry<OfficerRank, Integer>> sortedRanks = new ArrayList<>(rankPopularity.entrySet());
+		sortedRanks.sort(Comparator.comparing(Map.Entry::getValue));
+		return sortedRanks;
 	}
-
 }

@@ -3,7 +3,7 @@ package il.ac.tau.cs.sw1.ex9.riddles.first;
 import java.util.Random;
 
 public class C1 {
-    
+
     private static String str = "secret";
 
     public String foo() {
